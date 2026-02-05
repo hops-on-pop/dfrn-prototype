@@ -67,40 +67,41 @@ Tasks should be marked ✅ when completed.
 
 ## 5. RAG Question Answering API
 
-- [ ] Create server-side API or server action for Q&A
-- [ ] Steps per request:
-  - [ ] Accept user question
-  - [ ] Generate embedding for question
-  - [ ] Retrieve top matching chunks
-  - [ ] Construct grounded prompt
-  - [ ] Call OpenAI chat model
-- [ ] Response must include:
-  - [ ] Generated answer
-  - [ ] Source document names + links (if available)
-- [ ] If no relevant chunks found, return safe fallback response
+- ✅ Create server-side API or server action for Q&A
+- ✅ Steps per request:
+  - ✅ Accept user question
+  - ✅ Generate embedding for question
+  - ✅ Retrieve top matching chunks
+  - ✅ Construct grounded prompt
+  - ✅ Call OpenAI chat model
+- ✅ Response must include:
+  - ✅ Generated answer
+  - ✅ Source document names + links (if available)
+  - ✅ Source section titles (if available)
+- ✅ If no relevant chunks found, return safe fallback response
 
 ---
 
 ## 6. Prompting & Guardrails
 
-- [ ] System prompt enforces:
-  - [ ] Reference-only behavior
-  - [ ] No guessing or hallucination
-  - [ ] No personalized advice
-  - [ ] No crisis or sensitive handling
-- [ ] Responses must defer to staff when appropriate
+- ✅ System prompt enforces:
+  - ✅ Reference-only behavior
+  - ✅ No guessing or hallucination
+  - ✅ No personalized advice
+  - ✅ No crisis or sensitive handling
+- ✅ Responses must defer to staff when appropriate
 
 ---
 
 ## 7. Frontend – Kiosk UI
 
-- [ ] Full-screen, touch-optimized layout
-- [ ] Large typography and buttons
-- [ ] Simple single-question input flow
-- [ ] Display answer clearly
-- [ ] Display sources below answer
-- [ ] “Ask another question” action
-- [ ] Reset session after inactivity or button press
+- ✅ Full-screen, touch-optimized layout
+- ✅ Large typography and buttons
+- ✅ Simple single-question input flow
+- ✅ Display answer clearly
+- ✅ Display sources below answer
+- ✅ "Ask another question" action
+- ✅ Reset session after inactivity or button press
 
 ---
 

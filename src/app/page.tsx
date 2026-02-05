@@ -1,5 +1,5 @@
-import { ComponentExample } from "@/components/component-example";
+import { KioskChat } from "@/components/kiosk-chat";
 
 export default function Page() {
-return <ComponentExample />;
+	return <KioskChat />;
 }
