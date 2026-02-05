@@ -42,19 +42,19 @@ Tasks should be marked ✅ when completed.
 
 ## 3. Vector Search Utilities
 
-- [ ] Create reusable vector search function
-  - [ ] Accept query embedding
-  - [ ] Return top N matching chunks
-- [ ] Keep logic DB-agnostic except for pgvector usage
+- ✅ Create reusable vector search function
+  - ✅ Accept query embedding
+  - ✅ Return top N matching chunks
+- ✅ Keep logic DB-agnostic except for pgvector usage
 
 ---
 
 ## 4. Document Ingestion Pipeline (Manual)
 
-- [ ] Create shell tsv file for document chunks, metadata, and embeddings
-- [ ] Generate embeddings using OpenAI
-- [ ] Insert documents + chunks into DB
-- [ ] Script must be re-runnable without duplication
+- ✅ Create shell tsv file for document chunks, metadata, and embeddings
+- ✅ Generate embeddings using OpenAI
+- ✅ Insert documents + chunks into DB
+- ✅ Script must be re-runnable without duplication
 
 ### Hold for now
 

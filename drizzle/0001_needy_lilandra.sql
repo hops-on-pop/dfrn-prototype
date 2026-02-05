@@ -1,0 +1,1 @@
+ALTER TABLE "text_chunks" ADD COLUMN "section_title" varchar(512);
