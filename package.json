@@ -12,9 +12,12 @@
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
+    "data:clean": "bun scripts/clean-encoding.ts data/document-chunks.tsv data/document-chunks.tsv",
     "data:embed": "bun scripts/add-embeddings-to-tsv.ts data/document-chunks.tsv",
     "data:import": "bun scripts/import.ts data/document-chunks-embedded.tsv",
-    "data:ingest": "bun run data:embed && bun run data:import"
+    "data:import:update": "bun scripts/import.ts data/document-chunks-embedded.tsv --update",
+    "data:ingest": "bun run data:clean && bun run data:embed && bun run data:import",
+    "data:ingest:update": "bun run data:clean && bun run data:embed && bun run data:import:update"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.25",

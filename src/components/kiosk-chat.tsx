@@ -1,45 +1,33 @@
 "use client";
 
-import { useChat } from "@ai-sdk/react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { UIMessage } from "ai";
-import { z } from "zod/v4";
 import Markdown from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
-const sourceSchema = z.object({
-	title: z.string(),
-	sectionTitle: z.string().nullable(),
-	url: z.string().nullable(),
-});
+interface Source {
+	title: string;
+	sectionTitle: string | null;
+	url: string | null;
+}
 
-const messageMetadataSchema = z.object({
-	sources: z.array(sourceSchema).optional(),
-});
-
-type MessageMetadata = z.infer<typeof messageMetadataSchema>;
-type ChatMessage = UIMessage<MessageMetadata>;
+interface ChatMessage {
+	id: string;
+	role: "user" | "assistant";
+	content: string;
+	sources?: Source[];
+}
 
 const INACTIVITY_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
 
 export function KioskChat() {
-	const {
-		messages,
-		sendMessage,
-		setMessages,
-		status,
-		error,
-	} = useChat<ChatMessage>({
-		messageMetadataSchema,
-	});
-
+	const [messages, setMessages] = useState<ChatMessage[]>([]);
 	const [input, setInput] = useState("");
+	const [isLoading, setIsLoading] = useState(false);
+	const [error, setError] = useState<Error | null>(null);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 	const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const inputRef = useRef<HTMLTextAreaElement>(null);
-
-	const isLoading = status === "submitted" || status === "streaming";
 
 	const resetSession = useCallback(() => {
 		setMessages([]);
@@ -77,19 +65,59 @@ export function KioskChat() {
 
 	// Focus input after assistant response finishes
 	useEffect(() => {
-		if (status === "ready" && messages.length > 0) {
+		if (!isLoading && messages.length > 0) {
 			inputRef.current?.focus();
 		}
-	}, [status, messages.length]);
+	}, [isLoading, messages.length]);
 
-	const handleSubmit = (e: React.FormEvent) => {
+	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
 		const trimmed = input.trim();
 		if (!trimmed || isLoading) return;
 
-		sendMessage({ text: trimmed });
+		const userMessage: ChatMessage = {
+			id: crypto.randomUUID(),
+			role: "user",
+			content: trimmed,
+		};
+
+		setMessages((prev) => [...prev, userMessage]);
 		setInput("");
+		setIsLoading(true);
+		setError(null);
 		resetInactivityTimer();
+
+		try {
+			const response = await fetch("/api/chat", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					messages: [...messages, userMessage].map((m) => ({
+						role: m.role,
+						content: m.content,
+					})),
+				}),
+			});
+
+			if (!response.ok) {
+				throw new Error("Failed to get response");
+			}
+
+			const data = await response.json();
+
+			const assistantMessage: ChatMessage = {
+				id: crypto.randomUUID(),
+				role: "assistant",
+				content: data.message,
+				sources: data.sources,
+			};
+
+			setMessages((prev) => [...prev, assistantMessage]);
+		} catch (err) {
+			setError(err instanceof Error ? err : new Error("Unknown error"));
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -198,14 +226,8 @@ export function KioskChat() {
 
 function MessageBubble({ message }: { message: ChatMessage }) {
 	const isUser = message.role === "user";
-	const metadata = message.metadata as MessageMetadata | undefined;
-	const sources = metadata?.sources;
-
-	// Extract text from parts
-	const text = message.parts
-		.filter((part) => part.type === "text")
-		.map((part) => part.text)
-		.join("");
+	const sources = message.sources;
+	const text = message.content;
 
 	return (
 		<div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>

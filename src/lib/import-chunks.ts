@@ -56,14 +56,24 @@ async function parseTSV(filepath: string): Promise<TSVRow[]> {
 	});
 }
 
+interface ImportOptions {
+	updateExisting?: boolean; // If true, update existing chunks instead of skipping
+}
+
 /**
  * Import document chunks from a TSV file into the database
  * This function is re-runnable - it will skip documents/chunks that already exist
+ * unless updateExisting is true
  * 
  * @param filepath - Path to the TSV file
+ * @param options - Import options
  * @returns Summary of imported items
  */
-export async function importChunksFromTSV(filepath: string) {
+export async function importChunksFromTSV(
+	filepath: string,
+	options: ImportOptions = {},
+) {
+	const { updateExisting = false } = options;
 	const rows = await parseTSV(filepath);
 
 	// Group rows by document
@@ -78,6 +88,7 @@ export async function importChunksFromTSV(filepath: string) {
 
 	let documentsCreated = 0;
 	let chunksCreated = 0;
+	let chunksUpdated = 0;
 	let chunksSkipped = 0;
 
 	// Process each document group
@@ -115,8 +126,11 @@ export async function importChunksFromTSV(filepath: string) {
 			console.log(`  Created document: "${firstChunk.documentTitle}"`);
 		}
 
-		// Insert chunks for this document
+		// Insert or update chunks for this document
 		for (const chunk of chunks) {
+			// Convert embedding to PostgreSQL vector format
+			const embeddingStr = `[${chunk.embedding.join(",")}]`;
+
 			// Check if chunk already exists (by content)
 			const existingChunks = await db
 				.select()
@@ -129,13 +143,23 @@ export async function importChunksFromTSV(filepath: string) {
 				);
 
 			if (existingChunks.length > 0) {
-				chunksSkipped++;
+				if (updateExisting) {
+					// Update the existing chunk
+					await db
+						.update(textChunks)
+						.set({
+							sectionTitle: chunk.sectionTitle || null,
+							embedding: sql`${embeddingStr}::vector`,
+						})
+						.where(eq(textChunks.id, existingChunks[0].id));
+					chunksUpdated++;
+				} else {
+					chunksSkipped++;
+				}
 				continue;
 			}
 
-			// Convert embedding to PostgreSQL vector format
-			const embeddingStr = `[${chunk.embedding.join(",")}]`;
-
+			// Insert new chunk
 			await db.insert(textChunks).values({
 				documentId,
 				sectionTitle: chunk.sectionTitle || null,
@@ -150,6 +174,7 @@ export async function importChunksFromTSV(filepath: string) {
 	const summary = {
 		documentsCreated,
 		chunksCreated,
+		chunksUpdated,
 		chunksSkipped,
 		totalRows: rows.length,
 	};
@@ -157,6 +182,9 @@ export async function importChunksFromTSV(filepath: string) {
 	console.log("\nImport Summary:");
 	console.log(`  Documents created: ${documentsCreated}`);
 	console.log(`  Chunks created: ${chunksCreated}`);
+	if (updateExisting) {
+		console.log(`  Chunks updated: ${chunksUpdated}`);
+	}
 	console.log(`  Chunks skipped (duplicates): ${chunksSkipped}`);
 	console.log(`  Total rows processed: ${rows.length}`);
 
