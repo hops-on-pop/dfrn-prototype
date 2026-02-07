@@ -111,6 +111,7 @@ Tasks should be marked ✅ when completed.
 - [ ] No persistence across reloads
 - [ ] No user identification or tracking
 - [ ] Graceful loading and error states
+- [ ] Landing page - uer type selection, sets tone via prompt
 
 ---
 
