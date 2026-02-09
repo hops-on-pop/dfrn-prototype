@@ -1,92 +1,92 @@
-"use client";
+"use client"
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import Markdown from "react-markdown";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
+import { useCallback, useEffect, useRef, useState } from "react"
+import Markdown from "react-markdown"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Textarea } from "@/components/ui/textarea"
 
 interface Source {
-  title: string;
-  sectionTitle: string | null;
-  url: string | null;
+  title: string
+  sectionTitle: string | null
+  url: string | null
 }
 
 interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  sources?: Source[];
+  id: string
+  role: "user" | "assistant"
+  content: string
+  sources?: Source[]
 }
 
-const INACTIVITY_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
+const INACTIVITY_TIMEOUT_MS = 2 * 60 * 1000 // 2 minutes
 
 export function KioskChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [input, setInput] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<Error | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const resetSession = useCallback(() => {
-    setMessages([]);
-    setInput("");
+    setMessages([])
+    setInput("")
     if (inactivityTimer.current) {
-      clearTimeout(inactivityTimer.current);
-      inactivityTimer.current = null;
+      clearTimeout(inactivityTimer.current)
+      inactivityTimer.current = null
     }
-  }, [setMessages]);
+  }, [setMessages])
 
   // Reset inactivity timer on any interaction
   const resetInactivityTimer = useCallback(() => {
     if (inactivityTimer.current) {
-      clearTimeout(inactivityTimer.current);
+      clearTimeout(inactivityTimer.current)
     }
-    inactivityTimer.current = setTimeout(resetSession, INACTIVITY_TIMEOUT_MS);
-  }, [resetSession]);
+    inactivityTimer.current = setTimeout(resetSession, INACTIVITY_TIMEOUT_MS)
+  }, [resetSession])
 
   // Start inactivity timer when messages exist
   useEffect(() => {
     if (messages.length > 0) {
-      resetInactivityTimer();
+      resetInactivityTimer()
     }
     return () => {
       if (inactivityTimer.current) {
-        clearTimeout(inactivityTimer.current);
+        clearTimeout(inactivityTimer.current)
       }
-    };
-  }, [messages, resetInactivityTimer]);
+    }
+  }, [messages, resetInactivityTimer])
 
   // Auto-scroll to bottom when messages update
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
 
   // Focus input after assistant response finishes
   useEffect(() => {
     if (!isLoading && messages.length > 0) {
-      inputRef.current?.focus();
+      inputRef.current?.focus()
     }
-  }, [isLoading, messages.length]);
+  }, [isLoading, messages.length])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = input.trim();
-    if (!trimmed || isLoading) return;
+    e.preventDefault()
+    const trimmed = input.trim()
+    if (!trimmed || isLoading) return
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       role: "user",
       content: trimmed,
-    };
+    }
 
-    setMessages((prev) => [...prev, userMessage]);
-    setInput("");
-    setIsLoading(true);
-    setError(null);
-    resetInactivityTimer();
+    setMessages((prev) => [...prev, userMessage])
+    setInput("")
+    setIsLoading(true)
+    setError(null)
+    resetInactivityTimer()
 
     try {
       const response = await fetch("/api/chat", {
@@ -98,35 +98,35 @@ export function KioskChat() {
             content: m.content,
           })),
         }),
-      });
+      })
 
       if (!response.ok) {
-        throw new Error("Failed to get response");
+        throw new Error("Failed to get response")
       }
 
-      const data = await response.json();
+      const data = await response.json()
 
       const assistantMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: "assistant",
         content: data.message,
         sources: data.sources,
-      };
+      }
 
-      setMessages((prev) => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, assistantMessage])
     } catch (err) {
-      setError(err instanceof Error ? err : new Error("Unknown error"));
+      setError(err instanceof Error ? err : new Error("Unknown error"))
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
+      e.preventDefault()
+      handleSubmit(e)
     }
-  };
+  }
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -206,7 +206,11 @@ export function KioskChat() {
             onSubmit={handleSubmit}
             className="flex flex-1 items-center gap-3"
           >
+            <label htmlFor="chat-input" className="sr-only">
+              Question input
+            </label>
             <Textarea
+              id="chat-input"
               ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -239,13 +243,13 @@ export function KioskChat() {
         </div>
       </footer>
     </div>
-  );
+  )
 }
 
 function MessageBubble({ message }: { message: ChatMessage }) {
-  const isUser = message.role === "user";
-  const sources = message.sources;
-  const text = message.content;
+  const isUser = message.role === "user"
+  const sources = message.sources
+  const text = message.content
 
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
@@ -300,5 +304,5 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         )}
       </div>
     </div>
-  );
+  )
 }
