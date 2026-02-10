@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import Markdown from "react-markdown"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import Header from "@/components/layout/header"
 import { Textarea } from "@/components/ui/textarea"
+import { PersonStandingIcon } from "lucide-react"
 
 interface Source {
   title: string
@@ -26,6 +28,8 @@ export function KioskChat() {
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<Error | null>(null)
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null)
+  const [selectedRole, setSelectedRole] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inactivityTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
@@ -33,6 +37,7 @@ export function KioskChat() {
   const resetSession = useCallback(() => {
     setMessages([])
     setInput("")
+    setSelectedRole(null)
     if (inactivityTimer.current) {
       clearTimeout(inactivityTimer.current)
       inactivityTimer.current = null
@@ -97,6 +102,7 @@ export function KioskChat() {
             role: m.role,
             content: m.content,
           })),
+          userRole: selectedRole,
         }),
       })
 
@@ -130,42 +136,75 @@ export function KioskChat() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      {/* Header */}
-      <header className="shrink-0 border-b bg-primary px-6 py-5">
-        <h1 className="text-center text-2xl font-bold text-primary-foreground md:text-3xl">
-          Digital Family Resource Navigator
-        </h1>
-        <p className="mt-1 text-center text-base text-primary-foreground/80">
-          Ask a question about our programs, services, and resources.
-        </p>
-      </header>
+      <Header />
 
       {/* Messages area */}
       <main className="flex-1 overflow-y-auto px-4 py-6 md:px-8">
         <div className="mx-auto max-w-2xl space-y-4">
-          {messages.length === 0 && (
-            <>
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <p className="text-xl text-muted-foreground md:text-2xl">
-                  How can we help you today?
-                </p>
-                <p className="mt-2 text-base text-muted-foreground">
-                  Type your question below to get started.
-                </p>
+          {messages.length === 0 && !selectedRole && (
+            <div className="flex flex-1 items-center justify-center py-16 font-[Schoolbell]">
+              <div className="grid grid-cols-2 gap-6">
+                {/* Yellow — top left */}
+                <div className="flex size-56 md:size-72 flex-col items-center justify-center bg-yellow-400 p-6 text-green-700 shadow-lg">
+                  <p className="text-3xl md:text-4xl font-bold text-center leading-9">
+                    To Get Started Select Your Role
+                  </p>
+                </div>
+
+                {/* Red — top right */}
+                <button
+                  onClick={() => setSelectedRole("staff")}
+                  className="flex size-56 md:size-72 cursor-pointer flex-col items-center justify-center bg-red-700 p-6 text-white shadow-lg transition-transform hover:scale-105"
+                >
+                  <div className="text-3xl md:text-4xl font-bold flex flex-col items-center gap-2">
+                    Staff Member
+                    <PersonStandingIcon className="size-20" />
+                  </div>{" "}
+                </button>
+
+                {/* Blue — bottom left (rotated) */}
+                <button
+                  onClick={() => setSelectedRole("student")}
+                  className="flex size-56 md:size-72 -rotate-10 cursor-pointer flex-col items-center justify-center bg-blue-700 p-6 text-white shadow-lg transition-transform hover:scale-105"
+                >
+                  <div className="text-3xl md:text-4xl font-bold flex flex-col items-center gap-2">
+                    Student
+                    <PersonStandingIcon className="size-20" />
+                  </div>{" "}
+                </button>
+
+                {/* Green — bottom right */}
+                <button
+                  onClick={() => setSelectedRole("parent")}
+                  className="flex size-56 md:size-72 cursor-pointer flex-col items-center justify-center bg-green-700 p-6 text-white shadow-lg transition-transform hover:scale-105"
+                >
+                  <div className="text-3xl md:text-4xl font-bold flex flex-col items-center gap-2">
+                    Parent
+                    <PersonStandingIcon className="size-20" />
+                  </div>
+                </button>
               </div>
-              <div className="flex flex-col items-center p-12 border-2 text-lg border-red-700 rounded-lg text-gray-600">
-                <p className="pb-8 font-bold text-xl">
-                  Important: Privacy Notice
-                </p>
-                <p className="pb-8">
-                  Do not enter your name or any personal information such as
-                  email address or phone number. All questions are submitted to
-                  an AI model anonymously, but identifying information from your
-                  question is not removed.
-                </p>
-                <p>Our system does not store any information about you.</p>
-              </div>
-            </>
+            </div>
+          )}
+          {messages.length === 0 && selectedRole && (
+            <div className="flex flex-col items-center justify-center bg-yellow-50 p-8 mt-10 rounded-xl border border-yellow-400">
+              <p className="text-2xl font-bold text-red-700 pb-8">Notice</p>
+              <p className="text-lg pb-6">
+                The Digital Family Resource Navigator is not intended to replace
+                staff, assist with complex questions, or provide personalized
+                advice.
+              </p>
+              <p className="text-lg pb-6">
+                Do not include any personal information in your questions, such
+                as your name, address, phone number, email address, or any other
+                identifying information.
+              </p>
+              <p className="text-lg">
+                We do not store any conversation history, but personal
+                information is not removed from the model, which may be managed
+                by a third-party.
+              </p>
+            </div>
           )}
 
           {messages.map((message) => (
@@ -199,49 +238,50 @@ export function KioskChat() {
         </div>
       </main>
 
-      {/* Input area */}
-      <footer className="shrink-0 border-t bg-card px-4 py-4 md:px-8">
-        <div className="mx-auto flex max-w-2xl items-center gap-3">
-          <form
-            onSubmit={handleSubmit}
-            className="flex flex-1 items-center gap-3"
-          >
-            <label htmlFor="chat-input" className="sr-only">
-              Question input
-            </label>
-            <Textarea
-              id="chat-input"
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type your question here..."
-              rows={1}
-              disabled={isLoading}
-              className="flex-1 resize-none rounded-xl border border-input bg-background px-4 py-4 text-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 md:text-xl"
-            />
-            <Button
-              type="submit"
-              size="lg"
-              disabled={isLoading || !input.trim()}
-              className="h-12 px-6 text-lg"
-            >
-              Ask
-            </Button>
-          </form>
-          {messages.length > 0 && (
-            <Button
-              type="button"
-              variant="outline"
-              size="lg"
-              onClick={resetSession}
-              className="h-12 shrink-0 px-4 text-base"
-            >
-              Start Over
-            </Button>
-          )}
-        </div>
-      </footer>
+      {selectedRole && (
+        <>
+          <footer className="shrink-0 border-t bg-card px-4 py-4 md:px-8">
+            <div className="mx-auto flex max-w-2xl items-center gap-3">
+              <form
+                onSubmit={handleSubmit}
+                className="flex flex-1 items-center gap-3"
+              >
+                <label htmlFor="chat-input" className="sr-only">
+                  Question input
+                </label>
+                <Textarea
+                  id="chat-input"
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type your question here..."
+                  rows={1}
+                  disabled={isLoading}
+                  className="flex-1 resize-none rounded-xl border border-input bg-background px-4 py-4 text-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50 md:text-xl"
+                />
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={isLoading || !input.trim()}
+                  className="h-12 px-6 text-lg font-bold font-[Schoolbell] bg-green-700 disabled:opacity-50"
+                >
+                  Ask
+                </Button>
+              </form>
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={resetSession}
+                className="h-12 shrink-0 px-6 text-lg font-bold font-[Schoolbell] bg-yellow-400 text-green-800 disabled:opacity-50 hover:bg-yellow-300 hover:text-green-700"
+              >
+                Start Over
+              </Button>
+            </div>
+          </footer>
+        </>
+      )}
     </div>
   )
 }

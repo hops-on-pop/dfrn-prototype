@@ -3,7 +3,7 @@ import { generateText } from "ai";
 import { generateEmbedding } from "@/lib/generate-embeddings";
 import { searchSimilarChunks, type SearchResult } from "@/lib/vector-search";
 
-const SYSTEM_PROMPT = `You are a helpful resource navigator for families seeking social services and support programs. Your role is to answer questions using ONLY the reference documents provided below.
+const BASE_SYSTEM_PROMPT = `You are a helpful resource navigator for families seeking social services and support programs. Your role is to answer questions using ONLY the reference documents provided below.
 
 STRICT RULES:
 - ONLY use information from the provided reference documents to answer questions.
@@ -15,6 +15,13 @@ STRICT RULES:
 - Do NOT include citations or references in your response. The sources will be displayed separately.
 - Keep answers clear, concise, and easy to understand.
 - If a question is outside the scope of available documents, politely direct the user to speak with staff.`;
+
+const STUDENT_SYSTEM_PROMPT = `${BASE_SYSTEM_PROMPT}
+
+IMPORTANT — LANGUAGE GUIDELINES:
+- You are speaking to an elementary-aged student. Use simple, friendly, and age-appropriate language.
+- Avoid jargon, acronyms, or complex vocabulary. Explain things the way a teacher would to a young child.
+- Use short sentences and a warm, encouraging tone.`;
 
 function buildContextPrompt(chunks: SearchResult[]): string {
   if (chunks.length === 0) {
@@ -60,7 +67,7 @@ const NO_RESULTS_MESSAGE =
   "I don't have information about that in my resources. Please ask a staff member for help.";
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  const { messages, userRole } = await req.json();
 
   // Get the latest user message for retrieval
   const lastUserMessage = [...messages]
@@ -96,11 +103,15 @@ export async function POST(req: Request) {
   // Build context from retrieved chunks (or empty-results prompt)
   const contextPrompt = buildContextPrompt(relevantChunks);
 
+  // Select prompt based on user role
+  const basePrompt =
+    userRole === "student" ? STUDENT_SYSTEM_PROMPT : BASE_SYSTEM_PROMPT;
+
   // If no relevant chunks found, instruct the model to return the fallback
   const systemPrompt =
     relevantChunks.length === 0
-      ? `${SYSTEM_PROMPT}\n\n${contextPrompt}\n\nYou must respond with: "${NO_RESULTS_MESSAGE}"`
-      : `${SYSTEM_PROMPT}\n\n${contextPrompt}`;
+      ? `${basePrompt}\n\n${contextPrompt}\n\nYou must respond with: "${NO_RESULTS_MESSAGE}"`
+      : `${basePrompt}\n\n${contextPrompt}`;
 
   const result = await generateText({
     model: openai("gpt-5-mini"),
@@ -108,8 +119,13 @@ export async function POST(req: Request) {
     messages,
   });
 
+  const isFallback =
+    relevantChunks.length === 0 ||
+    result.text.includes("I don't have information about that") ||
+    result.text.includes("speak with a staff member");
+
   return Response.json({
     message: result.text,
-    sources,
+    sources: isFallback ? [] : sources,
   });
 }

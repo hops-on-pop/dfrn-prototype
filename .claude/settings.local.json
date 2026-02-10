@@ -1,7 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(bun run build:*)"
-    ]
+    "allow": ["Bash(bun run build:*)", "Bash(bunx biome:*)", "Bash(bunx tsc:*)"]
   }
 }
