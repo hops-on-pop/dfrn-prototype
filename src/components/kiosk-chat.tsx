@@ -158,7 +158,7 @@ export function KioskChat() {
                 >
                   <div className="text-3xl md:text-4xl font-bold flex flex-col items-center gap-2">
                     Staff Member
-                    <PersonStandingIcon className="size-20" />
+                    <PersonStandingIcon className="size-20 md:size-28 text-blue-700" />
                   </div>{" "}
                 </button>
 
@@ -169,7 +169,7 @@ export function KioskChat() {
                 >
                   <div className="text-3xl md:text-4xl font-bold flex flex-col items-center gap-2">
                     Student
-                    <PersonStandingIcon className="size-20" />
+                    <PersonStandingIcon className="size-20 md:size-28 text-red-700" />
                   </div>{" "}
                 </button>
 
@@ -180,7 +180,7 @@ export function KioskChat() {
                 >
                   <div className="text-3xl md:text-4xl font-bold flex flex-col items-center gap-2">
                     Parent
-                    <PersonStandingIcon className="size-20" />
+                    <PersonStandingIcon className="size-20 md:size-28 text-yellow-400" />
                   </div>
                 </button>
               </div>
